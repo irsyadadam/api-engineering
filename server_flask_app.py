@@ -3,30 +3,23 @@ import requests
 import ast
 import json
 
-import libs.extract_mesh as em
-import libs.elasticsearch_lookup as el
+from libs.extract_mesh import read_mesh_data, extract_mesh_term_and_id
+from libs.elasticsearch_lookup import elasticsearch_query
 
 """
 Notes:
-
 @shell:
 conda env list
-
 On virtual environment, only library installed is flask + dependencies
     @shell:
     conda list
-
 Everything is to run on shell. To run app:
     @shell:
     export FLASK_APP=flask_app.py 
     flask run 
-
 NOTE: Make sure you aeete in directory of flask app to export it!!
-
 ---------------------------------
-
 client -- requests library --> flask server <-- http response --> view function {return data}
-
 """
 
 #init the app
@@ -35,8 +28,8 @@ app = Flask(__name__)
 
 #import the mesh data in dict
 print("---loading mesh terms---")
-mesh_data = em.read_mesh_data("mesh_data.xml")
-mesh_id_to_term_map = em.extract_mesh_term_and_id(mesh_data)
+mesh_data = read_mesh_data("mesh_data.xml")
+mesh_id_to_term_map = extract_mesh_term_and_id(mesh_data)
 assert mesh_id_to_term_map["D009202"] == "Cardiomyopathies"
 print("----------done----------")
 
@@ -63,7 +56,7 @@ def batch_elasticsearch(mesh_request:str, doc_request:int) -> dict:
     @param docs is the batch request
     @returns a list of docs
     """
-    return el.elasticsearch_query(mesh_id_to_term_map[mesh_request], doc_request)
+    return elasticsearch_query(mesh_id_to_term_map[mesh_request], doc_request)
 
 
 #valid request is http://34.217.174.15:5000/api/data/pubmed_central?mesh=100&docs=10
@@ -76,13 +69,13 @@ def mesh_docs():
     @returns the document mapping associated with the mesh term
     """
     #parse request
-    mesh_request = request.args.get("mesh")
-    doc_request = request.args.get("docs")
+    mesh = request.args.get("mesh")
+    doc = request.args.get("docs")
 
     #checks if valid mesh term and batch request
-    if check_mesh(mesh_request) and check_docs(int(doc_request)):
+    if check_mesh(mesh) and check_docs(int(doc)):
         #return data using elasticsearch
-        return jsonify(batch_elasticsearch(mesh_request, int(doc_request)))
+        return jsonify(batch_elasticsearch(mesh, int(doc)))
 
     else:
         #return str("sad :(")
