@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 import requests
 import ast
@@ -75,7 +76,7 @@ def mesh_docs():
     #checks if valid mesh term and batch request
     if check_mesh(mesh) and check_docs(int(doc)):
         #return data using elasticsearch
-        return jsonify(batch_elasticsearch(mesh, int(doc)))
+        return app.response_class(batch_elasticsearch(mesh, int(doc)), mimetype = "text/csv")
 
     else:
         #return str("sad :(")
